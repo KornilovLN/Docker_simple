@@ -130,7 +130,8 @@ sammy sudo docker
 
 Для 19-й версии Docker полный список субкоманд выглядит следующим образом:
 
-Output
+Output  
+'''
   attach      Attach local standard input, output, and error streams to a running container  
   build       Build an image from a Dockerfile  
   commit      Create a new image from a container's changes  
@@ -171,6 +172,7 @@ Output
   update      Update configuration of one or more containers  
   version     Show the Docker version information  
   wait        Block until one or more containers stop, then print their exit codes  
+'''
 
 Чтобы просмотреть параметры, доступные для конкретной команды, введите:
 
