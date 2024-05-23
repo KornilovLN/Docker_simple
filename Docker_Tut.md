@@ -1,11 +1,10 @@
 # Установка и использование Docker в Ubuntu 20.04 #
-Published on June 11, 2020
+Published on May 23, 2024
 
     Ubuntu 20.04
     Docker
 
-На основе документа
-author  Brian Hogan Установка и использование Docker в Ubuntu 20.04
+На основе документа:  Brian Hogan "Установка и использование Docker в Ubuntu 20.04"
 
 ## <<< --- Введение --- >>> ##
 
@@ -27,7 +26,7 @@ Docker — это приложение, упрощающее процесс уп
 
 Первым делом обновите существующий список пакетов:
 
-    sudo apt update
+    <span style="color:yellow">sudo apt update</span>
 
 Затем установите несколько необходимых пакетов, которые позволяют apt использовать пакеты через HTTPS:
 
