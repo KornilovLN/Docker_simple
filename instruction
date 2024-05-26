@@ -23,6 +23,16 @@ $ mkdir ~/work/docker/prj1/logs
 # официальный образ Python как базовый
 FROM python:3.8
 
+#--- Уст. авторство
+LABEL maintainer ln.Kornilovstar@gmail.com
+
+#--- Усли работаем с кодом из GitHub:
+#--- Клонировать код из GitHub если надо
+# RUN git clone -q https://github.com/docker-in-practice/todo.git
+#--- Перейти в директорию клонированного кода
+# WORKDIR todo
+
+#--- Иначе, указываем рабочую директорию, где находимся
 # Уст. рабочую директорию в контейнере
 WORKDIR /home
 
@@ -56,6 +66,9 @@ $ docker start cont_prg
 
 #--- для подключения к контейнеру через bash
 $ docker exec -it cont_prg /bin/bash
+
+#--- для подробного просмотра контейнера
+$ docker inspect cont_prg
 
 
 
