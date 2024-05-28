@@ -1,2 +1,3 @@
 # Docker_simple
-Describing Docker customizations in a simple MD formatting way
+Describing Docker customizations and Docker Composer  
+in MD formatting way
