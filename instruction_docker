@@ -31,7 +31,7 @@ FROM python:3.8
 #--- Уст. авторство
 LABEL maintainer ln.Kornilovstar@gmail.com
 
-#--- Усли работаем с кодом из GitHub:
+#--- Если работаем с кодом из GitHub:
 #--- Клонировать код из GitHub если надо
 # RUN git clone -q https://github.com/docker-in-practice/todo.git
 #--- Перейти в директорию клонированного кода
