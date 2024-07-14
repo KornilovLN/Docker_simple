@@ -1,27 +1,32 @@
-Начало работы с Docker. Часть пятая
-25.03.2020
+## Начало работы с Docker. Часть пятая
+#### Заимствовано:         https://tokmakov.msk.ru/blog/item/489    18.03.2020
 
-Теги: Apache • CLI • Docker • Linux • MySQL • PHP • Виртуализация • Команда • Настройка • Процесс • Установка
 
-Взаимодействие служб apache и mysql
+### Взаимодействие служб apache и mysql
+
 Хорошо, наши две службы запускаются, но пока непонятно, могут ли они общаться между собой. И установились ли расширения mysqli и pdo_mysql для работы из PHP с базой данных MySQL. Давайте для начала заглянем внутрь контейнера apache, чтобы проверить расширения для работы с базой данных. Для этого запустим службы в работу и подключимся к контейнеру apache.
 
 Сначала выясним из вывода phpinfo(), где расположены ini-файлы:
 
-Configuration File (php.ini) Path	/usr/local/etc/php
-Loaded Configuration File	/usr/local/etc/php/php.ini
-Scan this dir for additional .ini files	/usr/local/etc/php/conf.d
-Additional .ini files parsed	/usr/local/etc/php/conf.d/docker-php-ext-mysqli.ini,
-/usr/local/etc/php/conf.d/docker-php-ext-pdo_mysql.ini,
-/usr/local/etc/php/conf.d/docker-php-ext-sodium.ini
-Теперь запускаем наши службы
+|-----------------------------------------|--------------------------------------------------------|
+| Configuration File (php.ini) Path	      | /usr/local/etc/php                                     |
+| Loaded Configuration File	              | /usr/local/etc/php/php.ini                             |
+| Scan this dir for additional .ini files |	/usr/local/etc/php/conf.d                              |
+| Additional .ini files parsed	          | /usr/local/etc/php/conf.d/docker-php-ext-mysqli.ini,   |
+|                                         | /usr/local/etc/php/conf.d/docker-php-ext-pdo_mysql.ini,|
+|                                         | /usr/local/etc/php/conf.d/docker-php-ext-sodium.ini    |
+|-----------------------------------------|--------------------------------------------------------|
 
+Теперь запускаем наши службы
+```
 $ docker-compose up -d
 Creating network "www_default" with the default driver
 Creating www_apache_1 ... done
 Creating www_mysql_1  ... done  
-И смотрим ini-файлы внутри контейнера
+```
 
+И смотрим ini-файлы внутри контейнера
+```
 $ docker-compose exec apache /bin/bash
 # cd /usr/local/etc/php/conf.d/
 # ls
@@ -30,10 +35,14 @@ docker-php-ext-mysqli.ini  docker-php-ext-pdo_mysql.ini  docker-php-ext-sodium.i
 extension=mysqli.so
 # cat docker-php-ext-pdo_mysql.ini 
 extension=pdo_mysql.so
-# exit  
+# exit
+```
+  
 Вроде все в порядке, так что можем поработать из php-скрипта с базой данныx:
-
+```
 $ nano ~/www/apache/html/index.php  
+```
+```
 <?php
 // открываем новое соединение
 $mysqli = new mysqli(
@@ -62,14 +71,17 @@ echo '</table>';
 // освобождаем память
 $results->free();
 // закрываем соединение
-$mysqli->close();  
-
+$mysqli->close();
+```
+  
 
 Обратите внимание, что в качестве хоста для соединения с сервером БД мы указываем mysql — это имя службы в файле docker-compose.yml.
 
-Три службы: Apache+PHP, MySQL и phpMyAdmin
-Давайте отредактируем файл ~/www/docker-compose.yml и добавим еще один контейнер:
 
+### Три службы: Apache+PHP, MySQL и phpMyAdmin
+
+Давайте отредактируем файл ~/www/docker-compose.yml и добавим еще один контейнер:
+```
 $ nano ~/www/docker-compose.yml  
 version: '3'
 services:
@@ -121,15 +133,19 @@ services:
       PMA_HOST: mysql
       MYSQL_USERNAME: root
       MYSQL_ROOT_PASSWORD: qwerty  
+```
+```
 $ docker-compose up -d
 Creating network "www_default" with the default driver
 Creating www_mysql_1 ... done
 Creating www_apache_1 ... done
 Creating www_pma_1    ... done  
+```
+
 Открываем браузер и набираем в адресной строке http://localhost:8080:
 
 
-
+```
 $ docker-compose down
 Stopping www_apache_1 ... done
 Stopping www_mysql_1  ... done
@@ -138,23 +154,30 @@ Removing www_apache_1 ... done
 Removing www_mysql_1  ... done
 Removing www_pma_1    ... done
 Removing network www_default  
-Взаимодействие контейнеров по сети
+```
+
+### Взаимодействие контейнеров по сети
+
 Сеть Docker построена на Container Network Model (CNM), которая позволяет любому желающему создать свой собственный сетевой драйвер. Таким образом, у контейнеров есть доступ к разным типам сетей и они могут подключаться к нескольким сетям одновременно. Помимо различных сторонних сетевых драйверов, у самого Docker-а есть 4 встроенных:
 
-bridge: в этой сети контейнеры запускаются по умолчанию. Связь устанавливается через bridge-интерфейс на хосте. У контейнеров, которые используют одинаковую сеть, есть своя собственная подсеть, и они могут передавать данные друг другу по умолчанию.
-host: этот драйвер дает контейнеру доступ к собственному пространству хоста (контейнер будет видеть и использовать тот же интерфейс, что и хост).
-overlay: этот драйвер позволяет строить сети на нескольких хостах с Docker (обычно на Docker Swarm кластере). У контейнеров также есть свои адреса сети и подсети, и они могут напрямую обмениваться данными, даже если они располагаются физически на разных хостах.
-none: это сетевой драйвер, который умеет отключать всю сеть для контейнеров. Обычно используется в сочетании с пользовательским сетевым драйвером.
-Сети типа мост (bridge)
-По умолчанию для контейнеров используется bridge. При первом запуске контейнера Docker создает дефолтную bridge-сеть. Эту сеть можно увидеть в общем списке по команде
+* bridge: в этой сети контейнеры запускаются по умолчанию. Связь устанавливается через bridge-интерфейс на хосте. У контейнеров, которые используют одинаковую сеть, есть своя собственная подсеть, и они могут передавать данные друг другу по умолчанию.
+* host: этот драйвер дает контейнеру доступ к собственному пространству хоста (контейнер будет видеть и использовать тот же интерфейс, что и хост).
+* overlay: этот драйвер позволяет строить сети на нескольких хостах с Docker (обычно на Docker Swarm кластере). У контейнеров также есть свои адреса сети и подсети, и они могут напрямую обмениваться данными, даже если они располагаются физически на разных хостах.
+* none: это сетевой драйвер, который умеет отключать всю сеть для контейнеров. Обычно используется в сочетании с пользовательским сетевым драйвером.
 
+#### Сети типа мост (bridge)
+
+По умолчанию для контейнеров используется bridge. При первом запуске контейнера Docker создает дефолтную bridge-сеть. Эту сеть можно увидеть в общем списке по команде
+```
 $ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 4db4885e345c        bridge              bridge              local
 1a425e4362b4        host                host                local
 9246f826508b        none                null                local  
-Чтобы проинспектировать ее свойства, запустим команду
+```
 
+Чтобы проинспектировать ее свойства, запустим команду
+```
 $ docker network inspect bridge  
 [
     {
@@ -193,12 +216,17 @@ $ docker network inspect bridge
         "Labels": {}
     }
 ]  
+```
+
 Также можно создать свои собственные bridge-сети при помощи команды
+```
+$ docker network create --driver bridge --subnet 192.168.100.0/24 --ip-range 192.168.100.0/24 custom-bridge-network 
+```
+ 
+#### Bridge-интерфейсы хоста
 
-$ docker network create --driver bridge --subnet 192.168.100.0/24 --ip-range 192.168.100.0/24 custom-bridge-network  
-Bridge-интерфейсы хоста
 Каждая bridge-сеть имеет свое представление в виде интерфейса на хосте. С сетью bridge, которая существует по умолчанию, обычно ассоциируется интерфейс docker0. Для каждой новой сети, которая создается при помощи команды docker network create, будет ассоциироваться свой собственный новый интерфейс.
-
+```
 $ ip addr
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -218,16 +246,21 @@ $ ip addr
        valid_lft forever preferred_lft forever
     inet6 fe80::42:3fff:fe50:59fd/64 scope link 
        valid_lft forever preferred_lft forever  
-Можно получить больше данных о статусе моста при помощи утилиты brctl (должен быть установлен пакет bridge-utils):
+```
 
+Можно получить больше данных о статусе моста при помощи утилиты brctl (должен быть установлен пакет bridge-utils):
+```
 $ brctl show docker0
 bridge name    bridge id            STP enabled    interfaces
 docker0        8000.02423f5059fd    no  
+```
+
 Как только мы запустим контейнеры и привяжем их к этой сети, интерфейс каждого из этих контейнеров будет выведен в списке в отдельной колонке. А если включить захват трафика в bridge-интерфейсе, то можно увидеть, как передаются данные между контейнерами в одной подсети.
 
-Виртуальные интерфейсы Linux
-Container Networking Model дает каждому контейнеру свое собственное сетевое пространство. Если запустить команду ip addr внутри контейнера, то можно увидеть его интерфейсы такими, какими их видит сам контейнер:
+#### Виртуальные интерфейсы Linux
 
+Container Networking Model дает каждому контейнеру свое собственное сетевое пространство. Если запустить команду ip addr внутри контейнера, то можно увидеть его интерфейсы такими, какими их видит сам контейнер:
+```
 $ docker run -it ubuntu:latest
 # apt update
 # apt install iproute2 -y
@@ -240,8 +273,10 @@ $ docker run -it ubuntu:latest
     link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
        valid_lft forever preferred_lft forever  
-Интерфейс eth0, который представлен в этом примере, можно увидеть только изнутри контейнера, а снаружи, на хосте, Docker создает соответствующую копию виртуального интерфейса if49, которая служит связью с внешним миром. Запустим еще один терминал на хосте и выполним команду
+```
 
+Интерфейс eth0, который представлен в этом примере, можно увидеть только изнутри контейнера, а снаружи, на хосте, Docker создает соответствующую копию виртуального интерфейса if49, которая служит связью с внешним миром. Запустим еще один терминал на хосте и выполним команду
+```
 $ ip addr
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -265,11 +300,14 @@ $ ip addr
     link/ether ba:52:36:4d:82:41 brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet6 fe80::b852:36ff:fe4d:8241/64 scope link 
        valid_lft forever preferred_lft forever  
+```
+```
 $ brctl show docker0
 bridge name    bridge id            STP enabled    interfaces
 docker0        8000.02423f5059fd    no             veth59134c1  
+```
 Откроем еще один терминал на хосте и запустим контейнер:
-
+```
 $ docker run -it ubuntu:latest
 # apt update
 # apt install iproute2 -y
@@ -282,8 +320,10 @@ $ docker run -it ubuntu:latest
     link/ether 02:42:ac:11:00:03 brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet 172.17.0.3/16 brd 172.17.255.255 scope global eth0
        valid_lft forever preferred_lft forever  
-Теперь опять выполним на хосте команды
+```
 
+Теперь опять выполним на хосте команды
+```
 $ ip addr
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -315,19 +355,25 @@ $ brctl show docker0
 bridge name    bridge id            STP enabled    interfaces
 docker0        8000.02423f5059fd    no             veth48f087e
                                                    veth59134c1  
+```
+
 Сразу стало видно, что два интерфейса присоединены к bridge-интерфейсу docker0 (по одному на каждый контейнер).
 
                         | Интефейс внутри контейнера | Интерфейс снаружи контейнера
 -----------------------------------------------------------------------------------
 Первый контейнер Ubuntu | Имя eth0, номер 48         | Имя veth59134c1, номер 49
 Второй контейнер Ubuntu | Имя eth0, номер 50         | Имя veth48f087e, номер 51  
-Дополнительно
-Репозиторий DockerHub: страница PHP
-Образы PHP разных версий (Debian и Alpine)
-Репозиторий DockerHub: страница MySQL
-Образы MySQL разных версий (5.6, 5.7, 8.0)
-Репозиторий DockerHub: страница Apache
-Образы Apache разных версий (Debian и Alpine)
+
+#### Дополнительно
+
+* Репозиторий DockerHub: страница PHP
+* Образы PHP разных версий (Debian и Alpine)
+* Репозиторий DockerHub: страница MySQL
+* Образы MySQL разных версий (5.6, 5.7, 8.0)
+* Репозиторий DockerHub: страница Apache
+* Образы Apache разных версий (Debian и Alpine)
+
+```
 Начало работы с Docker. Часть четвертая
 Начало работы с Docker. Часть шестая
 Начало работы с Docker. Часть третья
@@ -335,4 +381,4 @@ docker0        8000.02423f5059fd    no             veth48f087e
 Начало работы с Docker. Часть первая
 Создание SSH-туннеля. Часть 2 из 4
 Установка модулей PHP под Ubuntu
-
+```

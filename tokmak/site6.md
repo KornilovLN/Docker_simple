@@ -1,16 +1,17 @@
-Начало работы с Docker. Часть шестая
-30.03.2020
+## Начало работы с Docker. Часть шестая
+#### Заимствовано:         https://tokmakov.msk.ru/blog/item/490    18.03.2020
 
-Теги: Apache • CLI • Docker • Linux • MySQL • PHP • Виртуализация • Команда • Настройка • Процесс
 
 У нас сейчас запущены два контейнера на основе образа ubuntu:latest:
-
+```
 $ docker ps
 CONTAINER ID    IMAGE            COMMAND        CREATED        STATUS        PORTS    NAMES
 85417e60b40d    ubuntu:latest    "/bin/bash"    2 hours ago    Up 2 hours             laughing_clarke
 157ffc6166fc    ubuntu:latest    "/bin/bash"    2 hours ago    Up 2 hours             eloquent_goodall  
-Выполним команду ping google.com изнутри первого контейнера. А снаружи будем отслеживать ping с помощью утилиты tcpdump на виртуальном интерфейсе veth59134c1:
+```
 
+Выполним команду ping google.com изнутри первого контейнера. А снаружи будем отслеживать ping с помощью утилиты tcpdump на виртуальном интерфейсе veth59134c1:
+```
 $ sudo tcpdump -i veth59134c1 icmp # на основной системе
 tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
 listening on veth59134c1, link-type EN10MB (Ethernet), capture size 262144 bytes
@@ -20,18 +21,21 @@ listening on veth59134c1, link-type EN10MB (Ethernet), capture size 262144 bytes
 15:12:50.055363 IP lq-in-f138.1e100.net > 172.17.0.2: ICMP echo reply, id 372, seq 2, length 64
 15:12:51.028917 IP 172.17.0.2 > lq-in-f138.1e100.net: ICMP echo request, id 372, seq 3, length 64
 15:12:51.055577 IP lq-in-f138.1e100.net > 172.17.0.2: ICMP echo reply, id 372, seq 3, length 64  
+```
+```
 # apt install -y iputils-ping
 # ping -c 3 google.com # внутри контейнера
 PING google.com (173.194.73.138) 56(84) bytes of data.
 64 bytes from lq-in-f138.1e100.net (173.194.73.138): icmp_seq=1 ttl=42 time=42.0 ms
 64 bytes from lq-in-f138.1e100.net (173.194.73.138): icmp_seq=2 ttl=42 time=27.9 ms
 64 bytes from lq-in-f138.1e100.net (173.194.73.138): icmp_seq=3 ttl=42 time=26.7 ms
-
 --- google.com ping statistics ---
 3 packets transmitted, 3 received, 0% packet loss, time 2002ms
 rtt min/avg/max/mdev = 26.738/32.239/42.028/6.942 ms  
-Аналогично можно выполнить пинг от одного контейнера к другому. Сначала посмотрим, какие ip-адреса у контейнеров в сети bridge
+```
 
+Аналогично можно выполнить пинг от одного контейнера к другому. Сначала посмотрим, какие ip-адреса у контейнеров в сети bridge
+```
 $ docker network inspect bridge  
 [
     {
@@ -85,8 +89,10 @@ $ docker network inspect bridge
         "Labels": {}
     }
 ]  
-Запускаем tcpdump на хосте
+```
 
+Запускаем tcpdump на хосте
+```
 $ sudo tcpdump -ni docker0 host 172.17.0.2 and host 172.17.0.3
 tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
 listening on docker0, link-type EN10MB (Ethernet), capture size 262144 bytes
@@ -96,8 +102,10 @@ listening on docker0, link-type EN10MB (Ethernet), capture size 262144 bytes
 15:30:53.643935 IP 172.17.0.3 > 172.17.0.2: ICMP echo reply, id 374, seq 2, length 64
 15:30:54.668023 IP 172.17.0.2 > 172.17.0.3: ICMP echo request, id 374, seq 3, length 64
 15:30:54.668095 IP 172.17.0.3 > 172.17.0.2: ICMP echo reply, id 374, seq 3, length 64  
-И запускаем ping с первого контейнера на второй
+```
 
+И запускаем ping с первого контейнера на второй
+```
 # ping -c 3 172.17.0.3
 PING 172.17.0.3 (172.17.0.3) 56(84) bytes of data.
 64 bytes from 172.17.0.3: icmp_seq=1 ttl=64 time=0.180 ms
@@ -107,9 +115,12 @@ PING 172.17.0.3 (172.17.0.3) 56(84) bytes of data.
 --- 172.17.0.3 ping statistics ---
 3 packets transmitted, 3 received, 0% packet loss, time 2031ms
 rtt min/avg/max/mdev = 0.180/0.213/0.270/0.043 ms  
-Сеть при использовании docker-compose
-Давайте запустим три контейнера, которые описаны в docker-compose.yml:
+```
 
+### Сеть при использовании docker-compose
+
+Давайте запустим три контейнера, которые описаны в docker-compose.yml:
+```
 $ cd ~/www/
 $ cat docker-compose.yml  
 version: '3'
@@ -161,25 +172,33 @@ services:
       # название хоста в сети www_default
       PMA_HOST: mysql
       MYSQL_USERNAME: root
-      MYSQL_ROOT_PASSWORD: qwerty  
+      MYSQL_ROOT_PASSWORD: qwerty 
+```
+``` 
 $ docker-compose up -d
 Creating network "www_default" with the default driver
 Creating www_pma_1    ... done
 Creating www_apache_1 ... done
 Creating www_mysql_1  ... done  
+```
+```
 $ docker ps
 CONTAINER ID  IMAGE                  COMMAND                 CREATED             STATUS             PORTS                              NAMES
 7bed4b88ceac  www_mysql              "docker-entrypoint.s…"  About a minute ago  Up About a minute  0.0.0.0:3306->3306/tcp, 33060/tcp  www_mysql_1
 a9ab191d3f89  phpmyadmin/phpmyadmin  "/docker-entrypoint.…"  About a minute ago  Up About a minute  0.0.0.0:8080->80/tcp               www_pma_1
 f736a3a70e05  www_apache             "docker-php-entrypoi…"  About a minute ago  Up About a minute  0.0.0.0:80->80/tcp                 www_apache_1  
+```
+```
 $ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 4db4885e345c        bridge              bridge              local
 1a425e4362b4        host                host                local
 9246f826508b        none                null                local
 c3379a4dea9e        www_default         bridge              local  
-Проверим сеть, через которую взаимодействуют контейнеры:
+```
 
+Проверим сеть, через которую взаимодействуют контейнеры:
+```
 $ docker network inspect www_default  
 [
     {
@@ -236,9 +255,11 @@ $ docker network inspect www_default
             "com.docker.compose.version": "1.25.4"
         }
     }
-]  
-Здесь мы видим ip-адреса контейнеров: 172.22.0.2/16, 172.22.0.3/16 и 172.22.0.4/16. Но внутри сети контейнер доступен не только по ip-адресу, но и по имени службы. Давайте заглянем внутрь контейнера www_apache_1 (служба apache из YAML-файла):
+]
+```  
 
+Здесь мы видим ip-адреса контейнеров: 172.22.0.2/16, 172.22.0.3/16 и 172.22.0.4/16. Но внутри сети контейнер доступен не только по ip-адресу, но и по имени службы. Давайте заглянем внутрь контейнера www_apache_1 (служба apache из YAML-файла):
+```
 $ docker-compose exec apache /bin/bash
 # apt update
 # apt install -y iputils-ping
@@ -252,29 +273,37 @@ PING mysql (172.22.0.3) 56(84) bytes of data.
 3 packets transmitted, 3 received, 0% packet loss, time 10ms
 rtt min/avg/max/mdev = 0.200/0.205/0.215/0.017 ms
 # exit  
+```
+
 Просмотр логов в Docker
 Для начала посмотрим, какие контейнеры запущены в работу:
-
+```
 $ docker ps
 CONTAINER ID  IMAGE                  COMMAND                 CREATED              STATUS             PORTS                              NAMES
 756794a08941  phpmyadmin/phpmyadmin  "/docker-entrypoint.…"  About a minute ago   Up About a minute  0.0.0.0:8080->80/tcp               www_pma_1
 d4e1f0ab03c4  www_mysql              "docker-entrypoint.s…"  About a minute ago   Up About a minute  0.0.0.0:3306->3306/tcp, 33060/tcp  www_mysql_1
 cff6fc8e9f03  www_apache             "docker-php-entrypoi…"  About a minute ago   Up About a minute  0.0.0.0:80->80/tcp                 www_apache_1  
-Посмотрим логи Apache:
+```
 
+Посмотрим логи Apache:
+```
 $ docker logs www_apache_1
 AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.23.0.3. Set the 'ServerName' directive globally to...
 [Tue Mar 31 12:01:51.924142 2020] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.38 (Debian) PHP/7.4.4 configured -- resuming normal operations
 [Tue Mar 31 12:01:51.924294 2020] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'  
-Посмотрим логи MySQL:
+```
 
+Посмотрим логи MySQL:
+```
 $ $ docker logs www_mysql_1
 2020-03-31 12:01:52+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.19-1debian10 started.
 2020-03-31 12:01:52+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
 2020-03-31 12:01:52+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.0.19-1debian10 started.  
+```
+
 Эта команда работает только для контейнеров, запускаемых с драйвером ведения журнала json-file или journald.
 Логи монтируются на хост, поэтому легко понять, где они лежат:
-
+```
 $ docker inspect www_apache_1 | grep LogPath
 "LogPath": "/var/lib/docker/containers/cff...253/cff...253-json.log",  
 $ sudo cat /var/lib/docker/containers/cff...253/cff...253-json.log
@@ -282,29 +311,41 @@ $ sudo cat /var/lib/docker/containers/cff...253/cff...253-json.log
 {"log":"[Tue Mar 31 12:01:51.924142 2020] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.38 (Debian) PHP/7.4.4 configured -- resuming normal operations\n","stream":"stderr","time":"2020-03-31T12:01:51.927844571Z"}
 {"log":"[Tue Mar 31 12:01:51.924294 2020] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'\n","stream":"stderr","time":"2020-03-31T12:01:51.927901498Z"}
 {"log":"192.168.110.18 - - [31/Mar/2020:12:02:54 +0000] \"GET / HTTP/1.1\" 200 390 \"-\" \"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:74.0) Gecko/20100101 Firefox/74.0\"\n","stream":"stdout","time":"2020-03-31T12:02:54.454904936Z"}  
+```
+
 Логи можно просматривать в режиме реального времени:
-
+```
 $ docker logs www_pma_1 --follow  
-Docker включает несколько механизмов ведения журналов, которые называются драйверами регистрации. По умолчанию используется драйвер json-file, но можно использовать journald, syslog и другие. Изменить драйвер можно глобально, через файл /etc/docker/daemon.json:
+```
 
+Docker включает несколько механизмов ведения журналов, которые называются драйверами регистрации. По умолчанию используется драйвер json-file, но можно использовать journald, syslog и другие. Изменить драйвер можно глобально, через файл /etc/docker/daemon.json:
+```
 $ sudo nano /etc/docker/daemon.json  
 {
     "log-driver": "journald"
 }  
+```
+```
 $ sudo systemctl restart docker.service  
+```
+
 Либо при запуске контейнера:
-
+```
 $ docker run -d -p 80:80 --name apache-server --log-driver=journald httpd:latest  
-Либо в файле docker-compose.yml:
+```
 
+Либо в файле docker-compose.yml:
+```
 apache:
   image: httpd:latest
   logging:
     driver: journald
     options:
       tag: http-daemon  
-При использовании драйвера journald логи можно смотреть так:
+```
 
+При использовании драйвера journald логи можно смотреть так:
+```
 $ journalctl -u docker.service CONTAINER_NAME=apache-server
 -- Logs begin at Sat 2020-02-29 16:06:12 MSK, end at Tue 2020-03-31 16:09:53 MSK. --
 мар 31 16:26:37 test-server 2f5f00f1e480[14225]: AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'Serv
@@ -315,9 +356,14 @@ $ journalctl -u docker CONTAINER_TAG=http-daemon
 мар 31 16:16:55 test-server http-daemon[14225]: AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'Serve
 мар 31 16:16:55 test-server http-daemon[14225]: [Tue Mar 31 13:16:55.540692 2020] [mpm_event:notice] [pid 1:tid 140145144452224] AH00489: Apache/2.4.43 (Unix) configur
 мар 31 16:16:55 test-server http-daemon[14225]: [Tue Mar 31 13:16:55.541064 2020] [core:notice] [pid 1:tid 140145144452224] AH00094: Command line: 'httpd -D FOREGROUND  
-Для фильтрации логов по тегу, надо задать тег в файле docker-compose.yml или при запуске контейнера:
+```
 
+Для фильтрации логов по тегу, надо задать тег в файле docker-compose.yml или при запуске контейнера:
+```
 $ docker run -d -p 80:80 --name apache-server --log-opt tag=http-daemon httpd:latest  
+```
+
+```
 Начало работы с Docker. Часть пятая
 Начало работы с Docker. Часть четвертая
 Начало работы с Docker. Часть третья
@@ -325,4 +371,4 @@ $ docker run -d -p 80:80 --name apache-server --log-opt tag=http-daemon httpd:la
 Начало работы с Docker. Часть первая
 Создание SSH-туннеля. Часть 2 из 4
 Linux. Команда top
-
+```
